@@ -1,0 +1,46 @@
+name: CI with Caching
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Cache Python dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: cache-0ec0acc-${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            cache-0ec0acc-${{ runner.os }}-pip-
+
+      - name: prime-cache-0ec0acc
+        run: |
+          if [ "${{ steps.cache-deps.outputs.cache-hit }}" == "true" ]; then
+            echo "Cache hit! Dependencies restored from cache."
+          else
+            echo "Cache miss! Dependencies will be downloaded and cached."
+          fi
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify installation
+        run: |
+          pip list
+          echo "Build completed successfully!"
