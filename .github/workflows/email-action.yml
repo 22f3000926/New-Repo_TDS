@@ -1,0 +1,19 @@
+name: Email Action Workflow
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Send notification to 22f3000926@ds.study.iitm.ac.in
+        run: echo "Hello, world! Notification sent."
+
+      - name: Complete workflow
+        run: echo "Workflow completed successfully"
