@@ -1,4 +1,4 @@
-name: Multi-Platform Matrix Build
+name: Windows Matrix Build with Artifacts
 
 on:
   push:
@@ -6,34 +6,38 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build for Node.js ${{ matrix.node-version }}
-    runs-on: ubuntu-latest
+  build-windows:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        node-version: [14, 16, 18]   # 👈 3 parallel variants
+        os: [windows-latest, windows-2019, windows-2022]  # 3 Windows variants
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: matrix-74400c0
-        run: echo "Building for Node.js version ${{ matrix.node-version }}"
+        # simple log step with the required identifier
+        run: echo "Running matrix job for ${{ matrix.os }}"
 
-      - name: Setup Node.js
+      - name: Setup Node.js (ensures Node available to write a cross-platform file)
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '16'
 
-      - name: Generate build artifact
+      - name: Generate build artifact (cross-platform using node)
+        # Use Node to write an output file so the command works the same across Windows variants
         run: |
-          echo "Build output for Node version ${{ matrix.node-version }}" > output-${{ matrix.node-version }}.txt
-          echo "Timestamp: $(date)" >> output-${{ matrix.node-version }}.txt
-          echo "Build completed successfully!" >> output-${{ matrix.node-version }}.txt
+          node -e "const fs=require('fs'); const content = `Build output for runner: ${process.env.RUNNER_OS || '${{ matrix.os }}'}\nRunner: ${{ matrix.os }}\nTimestamp: ${new Date().toISOString()}\nBuild completed successfully!`; fs.writeFileSync('build-output-${{ matrix.os }}.txt', content); console.log('Wrote build-output-${{ matrix.os }}.txt')"
+
+      - name: Show artifact contents (for debugging)
+        run: |
+          type build-output-${{ matrix.os }}.txt
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-74400c0-v${{ matrix.node-version }}
-          path: output-${{ matrix.node-version }}.txt
+          name: build-74400c0-${{ matrix.os }}
+          path: build-output-${{ matrix.os }}.txt
